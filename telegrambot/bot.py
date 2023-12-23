@@ -32,7 +32,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id=update.effective_chat.id,
         text="Завантажте файл з розкладом у форматі Outlook 2002/XP (*.CSV).",
     )
-
+    logging.info(f"User {update.message.from_user.id} started the conversation.")
     return UPLOAD
 
 
@@ -41,15 +41,17 @@ async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
 
     # Download.
+   
     await update.message.reply_text("Завантажую події. Зачекайте будь ласка.")
     f = await context.bot.get_file(update.message.document.file_id)
+    logging.info(f"User {update.message.from_user.id} uploaded a file {f.file_path}")
     mem = io.BytesIO()
     await f.download_to_memory(mem)
     mem.seek(0)
-
+    
     # Parse.
     events = read_outlook_calendar_csv(io.TextIOWrapper(mem, encoding="cp1251"))
-
+    logging.info(f"Before adding to the database")
     if len(events) > 0:
         # Add to the database.
         delete_schedule(user_id)
@@ -68,6 +70,7 @@ async def upload(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def select_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info(f"User {update.message.from_user.id} requested events for {update.message.text}")
     user_id = str(update.message.from_user.id)
     events = select(user_id, update.message.text.strip(" \t\n"))
 
